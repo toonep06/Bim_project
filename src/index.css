@@ -1,0 +1,47 @@
+/* Login.css */
+.login-page {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: url('/src/assets/images/logo.png') no-repeat center center fixed;
+  background-size: cover;
+}
+
+.bg-login-image {
+  background-image: url('/src/assets/images/logo.png');
+  background-size: cover;
+  background-position: center;
+  height: 100%;
+}
+
+.card {
+  border-radius: 15px;
+}
+
+.card-body {
+  padding: 30px;
+}
+
+.btn-primary {
+  background-color: #4e73df;
+  border: none;
+}
+
+h1.h4 {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+}
+
+.form-control-user {
+  border-radius: 50px;
+  padding: 1.5rem;
+}
+
+.alert-danger {
+  color: #e74a3b;
+  background-color: #f8d7da;
+  border-color: #f5c6cb;
+}
+
