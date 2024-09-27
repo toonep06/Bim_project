@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useContext  } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { RoleContext } from '../services/RoleContext';
+
 
 function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState(null);
   const navigate = useNavigate();
-
+  const { setRole } = useContext(RoleContext);
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -25,7 +27,7 @@ function Login() {
         // บันทึก token และ username ลงใน LocalStorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('username', data.username); // บันทึก username ที่ได้จาก API
-
+        setRole(data.role); 
         console.log('Login successful!');
         navigate('/');
       } else {
@@ -105,4 +107,4 @@ function Login() {
   );
 }
 
-export default Login;
+export default  Login;

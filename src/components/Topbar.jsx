@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; // นำเข้า useNavigate
-
+import logo from '/src/assets/images/logo.png';
 function Topbar(props) {
   const navigate = useNavigate(); // ใช้ navigate เพื่อนำทางไปยังหน้า login
 
@@ -54,7 +54,7 @@ function Topbar(props) {
               <img
                 className="img-profile rounded-circle"
                 style={{ border: 'solid 2px' }}
-                src="src/assets/images/logo.png"
+                src={logo}
                 alt="User Profile"
               />
             </a>
