@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios'; // ใช้ axios ในการดึงข้อมูลจาก API
 import DataTable from 'datatables.net-dt';
-
+import config from '../../config';
 
 function Projects() {
     let table = new DataTable('#myTable', {
@@ -26,11 +26,7 @@ function Projects() {
                 }
 
                 // ส่งคำขอ API พร้อม Authorization Header
-                const response = await axios.get('http://localhost:3000/api/projects', {
-                    headers: {
-                        Authorization: `Bearer ${token}`, // แนบ token ใน Authorization header
-                    },
-                });
+                const response = await axios.get(+config.api_path+'/api/projects',config.api_path.Headers());
 
                 setProjects(response.data); // เก็บข้อมูลโปรเจกต์ใน state
                 setFilteredProjects(response.data); // เก็บข้อมูลโปรเจกต์ในตัวกรอง

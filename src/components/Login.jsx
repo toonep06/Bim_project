@@ -1,7 +1,7 @@
 import React, { useState, useContext  } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RoleContext } from '../services/RoleContext';
-
+import config from '../../config';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -13,7 +13,7 @@ function Login() {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch(config.api_path+'/api/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

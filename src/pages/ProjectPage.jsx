@@ -7,6 +7,7 @@ import Modal from "../components/Modal";
 import { useNavigate } from "react-router-dom";
 import Swal from 'sweetalert2';
 import { RoleContext } from '../services/RoleContext';
+import config from "../../config";
 
 function ProjectPage() {
     const { role } = useContext(RoleContext);
@@ -23,7 +24,10 @@ function ProjectPage() {
     //createProjects.status = 'Active';
     // ฟังก์ชันสำหรับเปลี่ยนสถานะและปรับเปลี่ยน class
     const [fileName, setFileName] = useState(''); // สร้าง state สำหรับเก็บชื่อไฟล์
-
+    const editSet =(data)=>{
+        console.log(data)
+        setCreateProjects(data);
+    }
     const handleChangeFile2 = (files) => {
         if (files.length > 0) {
             setFileName(files[0].name); // เก็บชื่อไฟล์ที่ถูกเลือก
@@ -70,11 +74,7 @@ function ProjectPage() {
             }
 
             // ส่งคำขอ API พร้อม Authorization Header
-            const response = await axios.get('http://localhost:3000/api/projects', {
-                headers: {
-                    Authorization: `Bearer ${token}`, // แนบ token ใน Authorization header
-                },
-            });
+            const response = await axios.get(config.api_path + '/api/projects', config.headers());
 
             setProjects(response.data); // เก็บข้อมูลโปรเจกต์ใน state
             setFilteredProjects(response.data); // เก็บข้อมูลโปรเจกต์ในตัวกรอง
@@ -131,11 +131,7 @@ function ProjectPage() {
             });
 
             if (result.isConfirmed) {
-                await axios.delete('http://localhost:3000/api/projects/' + projectId, {
-                    headers: {
-                        Authorization: `Bearer ${token}`, // แนบ token ใน Authorization header
-                    },
-                });  // เรียก API ลบ Task
+                await axios.delete(config.api_path + '/api/projects/' + projectId, config.headers());  // เรียก API ลบ Task
                 Swal.fire('Deleted!', 'Your task has been deleted.', 'success');
 
                 // อัพเดตรายการ Task หลังจากลบ
@@ -158,22 +154,26 @@ function ProjectPage() {
         e.preventDefault();
         console.log(e)
         const formData = new FormData();
-        formData.append('project_name', createProjects.projectName);
+        formData.append('project_name', createProjects.project_name);
         formData.append('description', createProjects.description);
         formData.append('status', createProjects.status);
-        formData.append('start_date', createProjects.startDate);
-        formData.append('end_date', createProjects.endDate);
+        formData.append('start_date', createProjects.start_date);
+        formData.append('end_date', createProjects.end_date);
 
         if (imageFile) {
             formData.append('images', imageFile); // อัปโหลดไฟล์รูปภาพ
         }
 
         try {
-            const response = await axios.post('http://localhost:3000/api/projects', formData, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
-            });
+            let response = {};
+            if (createProjects.project_id !== undefined) {
+                console.log(createProjects.project_id)
+                response = await axios.put(config.api_path + '/api/projects/'+createProjects.project_id, formData, config.headers());
+            }
+            else {
+                response = await axios.post(config.api_path + '/api/projects', formData, config.headers());
+                console.log('Create');
+            }
             if (response.status === 201) {
                 Swal.fire({ title: 'Success', text: 'Project created successfully', icon: 'success', timer: 2000 });
                 clearData();
@@ -295,7 +295,7 @@ function ProjectPage() {
                     {/* ตารางแสดงผลโปรเจกต์ */}
                     <div className="card shadow mb-4">
                         <div className="card-header py-1">
-                        <div className="d-sm-flex align-items-center justify-content-between mb-1 flex-wrap">
+                            <div className="d-sm-flex align-items-center justify-content-between mb-1 flex-wrap">
                                 <div className="d-flex flex-column flex-md-row mx-3 mb-2">
                                     <span className="m-0 font-weight-bold text-primary mb-2 mb-md-0 mr-md-5">Project</span>
 
@@ -329,7 +329,7 @@ function ProjectPage() {
                                     data-toggle="modal"
                                     data-target="#modalUser"
                                 >
-                                    <i className="fas fa-plus fa-sm text-white-50"></i> Generate Task
+                                    <i className="fas fa-plus fa-sm text-white-50"></i> Generate Project
                                 </a>
                             </div>
                         </div>
@@ -345,11 +345,8 @@ function ProjectPage() {
                                             <th style={{ width: '50px', textAlign: 'center', verticalAlign: 'middle' }}>Issues</th>
                                             <th style={{ width: '90px', textAlign: 'center', verticalAlign: 'middle' }}>Start Date</th>
                                             <th style={{ width: '90px', textAlign: 'center', verticalAlign: 'middle' }}>Due Date</th>
-                                            {role === 'admin' ? (
-                                                <th style={{ width: '50px', textAlign: 'center', verticalAlign: 'middle' }}>Action</th>
-                                            ) : (
-                                                <></>
-                                            )}
+                                            <th style={{ width: '50px', textAlign: 'center', verticalAlign: 'middle' }}>Action</th>
+
                                         </tr>
                                     </thead>
                                     <tbody className="">
@@ -396,29 +393,26 @@ function ProjectPage() {
                                                 <td className="text-center" style={{ verticalAlign: 'middle' }}>
                                                     {new Date(project.end_date).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                 </td>
-                                                {role === 'admin' ? (
-                                                    <td className="text-center" style={{ verticalAlign: 'middle' }}>
-                                                        <button className="btn btn-sm btn-circle btn-success mr-3"
-                                                            onClick={(event) => {
-                                                                event.stopPropagation(); // หยุด onClick ของ tr
-                                                                //delelteProject(project.project_id);
-                                                            }}
-                                                        >
-                                                            <i className="fa fa-pen"></i>
-                                                        </button>
-                                                        <button
-                                                            onClick={(event) => {
-                                                                event.stopPropagation(); // หยุด onClick ของ tr
-                                                                delelteProject(project.project_id);
-                                                            }}
-                                                            className="btn btn-sm btn-circle btn-danger"
-                                                        >
-                                                            <i className="fa fa-trash"></i>
-                                                        </button>
-                                                    </td>
-                                                ) : (
-                                                    <></>
-                                                )}
+                                                <td className="text-center" style={{ verticalAlign: 'middle' }}>
+                                                    <button className="btn btn-sm btn-circle btn-success mr-3"
+                                                        onClick={(event) => {
+                                                            event.stopPropagation();
+                                                            editSet(project);
+                                                            $('#modalUser').modal('show'); // ใช้ jQuery ในการเปิด modal
+                                                        }}
+                                                    >
+                                                        <i className="fa fa-pen"></i>
+                                                    </button>
+                                                    <button
+                                                        onClick={(event) => {
+                                                            event.stopPropagation(); // หยุด onClick ของ tr
+                                                            delelteProject(project.project_id);
+                                                        }}
+                                                        className="btn btn-sm btn-circle btn-danger"
+                                                    >
+                                                        <i className="fa fa-trash"></i>
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -435,8 +429,8 @@ function ProjectPage() {
                         <label>Project Name</label>
                         <input
                             className="form-control"
-                            value={createProjects.projectName || ''}
-                            onChange={(e) => setCreateProjects({ ...createProjects, projectName: e.target.value })}
+                            value={createProjects.project_name || ''}
+                            onChange={(e) => setCreateProjects({ ...createProjects, project_name: e.target.value })}
                             required
                         />
                     </div>
@@ -470,16 +464,17 @@ function ProjectPage() {
                         <input
                             type="date"
                             className="form-control mr-2"
-                            value={createProjects.startDate || ''}
-                            onChange={(e) => setCreateProjects({ ...createProjects, startDate: e.target.value })}
+                            value={createProjects.start_date ? new Date(createProjects.start_date).toISOString().substring(0, 10) : ' '}
+                            onChange={(e) => setCreateProjects({ ...createProjects, start_date: e.target.value })}
                             required
                         />
                         <label className="input-group-text bg-info text-white">End Date</label>
                         <input
                             type="date"
                             className="form-control"
-                            value={createProjects.endDate || ''}
-                            onChange={(e) => setCreateProjects({ ...createProjects, endDate: e.target.value })}
+                            value={createProjects.end_date ? new Date(createProjects.end_date).toISOString().substring(0, 10) : ' '}
+                            onChange={(e) => setCreateProjects({ ...createProjects, end_date: e.target.value })}
+                            placeholder="dd/mm/yyyy" 
                             required
                         />
                     </div>

@@ -6,7 +6,8 @@ import '/node_modules/startbootstrap-sb-admin-2/vendor/datatables/dataTables.boo
 import Modal from "../components/Modal";
 import { useNavigate, useParams } from "react-router-dom";
 import Swal from 'sweetalert2';
-
+import config from "../../config";
+import jsPDF from 'jspdf';
 function TaskPage() {
     const [projects, setProjects] = useState([]);
     const { project_id, project_name } = useParams();
@@ -43,6 +44,79 @@ function TaskPage() {
             btns[i].click();
         }
     }
+
+    const generatePDF = async () => {
+        const doc = new jsPDF();
+      
+        // ฟังก์ชันแปลง URL เป็น Base64
+        const toDataURL = (url) =>
+          fetch(url)
+            .then((response) => response.blob())
+            .then(
+              (blob) =>
+                new Promise((resolve, reject) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result);
+                  reader.onerror = reject;
+                  reader.readAsDataURL(blob);
+                })
+            );
+      
+        // เพิ่มโลโก้ที่ส่วนหัวของเอกสาร
+        //const logoUrl = 'https://example.com/path_to_logo.png'; // แทนที่ด้วย URL ของโลโก้ของคุณ
+        //const logoData = await toDataURL(logoUrl);
+        //doc.addImage(logoData, 'PNG', 10, 10, 50, 20); // โลโก้ที่มุมซ้ายบน ขนาด 50x20
+      
+        let yPos = 40; // เริ่มต้น Y position หลังจากโลโก้
+      
+        const projectId = projects[0]?.project_id || "Unknown Project ID"; // ใช้ project_id จาก task แรก
+        doc.text(`Project ID: ${projectId}`, 10, yPos);
+      
+        yPos += 10; // เพิ่มระยะห่างหลังแสดง Project ID
+      
+        for (let taskIndex = 0; taskIndex < projects.length; taskIndex++) {
+          const task = projects[taskIndex];
+      
+          const taskName = task.task_name || "Unnamed Task";
+          const startDate = task.start_date ? new Date(task.start_date).toLocaleDateString() : "Unknown Start Date";
+          const endDate = task.end_date ? new Date(task.end_date).toLocaleDateString() : "Unknown End Date";
+          const status = task.status || "Unknown";
+      
+          // เพิ่มข้อมูลของแต่ละ task ลงใน PDF
+          doc.text(`Task ${taskIndex + 1}: ${taskName}`, 10, yPos);
+          doc.text(`Start Date: ${startDate}`, 10, yPos + 10);
+          doc.text(`End Date: ${endDate}`, 10, yPos + 20);
+          doc.text(`Status: ${status}`, 10, yPos + 30);
+      
+          // ตรวจสอบว่ามี Images อยู่ใน task หรือไม่
+          if (task.Images && task.Images.length > 0) {
+            const imageUrl = config.api_path + task.Images[0].url;
+      
+            try {
+              // ดึงรูปภาพจาก URL และแปลงเป็น Base64
+              const imgData = await toDataURL(imageUrl);
+              doc.addImage(imgData, 'JPEG', 120, yPos, 50, 50); // เพิ่มรูปภาพลงใน PDF ที่มุมขวา
+            } catch (error) {
+              console.error('Error loading image:', error);
+            }
+          }
+      
+          yPos += 60; // ปรับ yPos เพื่อเว้นระยะห่างระหว่าง task
+      
+          // ตรวจสอบว่าพื้นที่ในหน้านี้เหลือเพียงพอหรือไม่ (ถ้าไม่พอเพิ่มหน้าใหม่)
+          if (yPos > 270 && taskIndex < projects.length - 1) {
+            doc.addPage();
+            yPos = 20; // รีเซ็ต yPos สำหรับหน้าใหม่
+          }
+        }
+      
+        // ดาวน์โหลด PDF เมื่อเสร็จสิ้นการประมวลผลทุก task
+        doc.save('report.pdf');
+      };
+      
+      
+      
+      
     const fetchProjects = async () => {
         try {
             // ดึง token จาก LocalStorage
@@ -54,12 +128,8 @@ function TaskPage() {
             }
 
             // ส่งคำขอ API พร้อม Authorization Header
-            const response = await axios.get('http://localhost:3000/api/tasks/project_id/' + project_id, {
-                headers: {
-                    Authorization: `Bearer ${token}`, // แนบ token ใน Authorization header
-                },
-            });
-
+            const response = await axios.get(config.api_path + '/api/tasks/project_id/' + project_id, config.headers());
+            console.log(response);
             setProjects(response.data); // เก็บข้อมูลโปรเจกต์ใน state
             setFilteredProjects(response.data); // เก็บข้อมูลโปรเจกต์ในตัวกรอง
             setFilteredProjects(response.data); // เก็บข้อมูลโปรเจกต์ในตัวกรอง
@@ -241,6 +311,9 @@ function TaskPage() {
                                 >
                                     <i className="fas fa-plus fa-sm text-white-50"></i> Generate Task
                                 </a>
+                                <div>
+                                    <button onClick={generatePDF}>Generate PDF</button>
+                                </div>
                             </div>
 
                         </div>
@@ -343,7 +416,7 @@ function TaskPage() {
                             className="form-control"
                             value={createProjects.description || ''}
                             onChange={(e) => setCreateProjects({ ...createProjects, description: e.target.value })}
-                           
+
                         />
                     </div>
                     <div className="mt-3">
